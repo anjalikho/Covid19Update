@@ -334,28 +334,12 @@ function chartWorldSm3(target, region_data, region, limit) {
     gradientStroke.addColorStop(0.4, 'rgba(66,134,121,0.0)'); //green colors
     gradientStroke.addColorStop(0, 'rgba(66,134,121,0)'); //green colors
 
-	var daily_increase = [];
-	var daily_increase_avg = [];
-	
-	for (var i = startIdx; i < dataSeries.length; i++) {
-		daily_increase.push(dataSeries[i] - prev);
-		prev = dataSeries[i];
+    if (limit > -1) {
+      dateSeries = dateSeries.slice(-1 * limit);
+      dataSeries = dataSeries.slice(-1 * limit);
+    }
 
-		if (i > 0 && i < dataSeries.length - 1) {
-			//console.log(i + ", v[i-1]: " +  dataSeries[i - 1] + ", v[i]: " + dataSeries[i] + ", v[i+1]: " + dataSeries[i + 1]);
-			daily_increase_avg.push((dataSeries[i - 1] + dataSeries[i] + dataSeries[i + 1])/3);
-		} else {
-			daily_increase_avg.push(dataSeries[i]);
-		}
-	}
-
-//	console.log("5. daily_increase: " + daily_increase);
-
-	if (limit > -1) {
-		dateSeries = dateSeries.slice(-1 * limit);
-		dataSeries = dataSeries.slice(-1 * limit);
-	}
-
+    var daily_increase = dailyIncrease(dataSeries);
 
     var config = {
       labels: dateSeries,
@@ -397,6 +381,11 @@ function chartWorldSm4(target, region_data, region, limit) {
 
 	var dateSeries = region_data[region]["dateSeries"];
 	var dataSeries = logarithmic(region_data[region]["confirmedSeries"]);
+
+	if (limit > -1) {
+		dateSeries = dateSeries.slice(-1 * limit);
+		dataSeries = dataSeries.slice(-1 * limit);
+	}
 	
   gradientStroke.addColorStop(1, 'rgba(66,134,121,0.15)');
   gradientStroke.addColorStop(0.4, 'rgba(66,134,121,0.0)'); //green colors
@@ -425,7 +414,7 @@ function chartWorldSm4(target, region_data, region, limit) {
 
 	var myChart = getChartJS('#' + target + ' .' + CHART_ID_ChartSM4, ctx, 'line', config, gradientChartOptionsConfigurationWithTooltipGreen);
 	myChart.config.data.labels=dateSeries;
-	myChart.config.data.datasets[0].label='logarithmic';
+	myChart.config.data.datasets[0].label='exponential';
 	myChart.config.data.datasets[0].data=dataSeries;
 	myChart.update();
 
@@ -554,6 +543,38 @@ function daysToDouble(arr, isCumulative) {
 
     }
     return days2Double;
+}
+
+function dailyIncrease(arr) {
+  var result = [];
+  result.push(arr[0]);
+  for (var p = 1; p < arr.length; p++)
+    result.push(arr[p] - arr[p-1]);
+  
+  return result;
+}
+
+function averages(arr, avgCount) {
+	var daily_increase = [];
+  var prev = [];
+  var sumForAvg = 0;
+  for (var i = 0; i < avgCount; i++) {
+    prev.push(arr[i]);
+    sumForAvg += arr[i];
+    daily_increase.push(sumForAvg / (i + 1));
+  }
+  
+	
+	for (var i = avgCount; i < arr.length; i++) {
+		if (i == 0 ) {
+      sumForAvg = arr[i];
+    } else {
+      sumForAvg = sumForAvg - arr[i - 1] + arr[i];
+    }
+    daily_increase.push(sumForAvg / avgCount);
+	}
+  
+  return daily_increase;
 }
 
 function logarithmic(arr) {
